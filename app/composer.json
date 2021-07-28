@@ -9,7 +9,8 @@
         "fruitcake/laravel-cors": "^2.0",
         "guzzlehttp/guzzle": "^7.0.1",
         "laravel/framework": "^8.40",
-        "laravel/tinker": "^2.5"
+        "laravel/tinker": "^2.5",
+        "telegram-bot/api": "^2.3"
     },
     "require-dev": {
         "roave/security-advisories": "dev-latest",
