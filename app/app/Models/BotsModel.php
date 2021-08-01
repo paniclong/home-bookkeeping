@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Collection\BotCollection;
 use Illuminate\Database\Eloquent\Model;
 
 class BotsModel extends Model
@@ -27,7 +28,7 @@ class BotsModel extends Model
      *
      * @return BotsModel
      */
-    public function setStep(int $stepId): BotsModel
+    public function setStepId(int $stepId): BotsModel
     {
         $this->setAttribute('step_id', $stepId);
 
@@ -69,8 +70,18 @@ class BotsModel extends Model
     /**
      * @return int
      */
-    public function getStep(): int
+    public function getStepId(): int
     {
-        return (int) $this->getAttributeValue('step');
+        return (int) $this->getAttributeValue('step_id');
+    }
+
+    /**
+     * @param array $models
+     *
+     * @return BotCollection
+     */
+    public function newCollection(array $models = []): BotCollection
+    {
+        return new BotCollection($models);
     }
 }

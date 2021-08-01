@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\ExpensesModel;
 use App\Models\MessagesModel;
 use App\Repository\ExpensesRepository;
+use Illuminate\Database\Eloquent\Collection;
 use TelegramBot\Api\Types\Message;
 
 class BotExpensesService
@@ -46,5 +47,13 @@ class BotExpensesService
 
         $messageModel->setAttribute('step', $step + 1);
         $expensesModel->save();
+    }
+
+    /**
+     * @return Collection
+     */
+    public function getAll(): Collection
+    {
+        return $this->expensesRepository->findAll();
     }
 }

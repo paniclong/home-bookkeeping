@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\IncomesModel;
 use App\Models\MessagesModel;
 use App\Repository\IncomesRepository;
+use Illuminate\Database\Eloquent\Collection;
 use TelegramBot\Api\Types\Message;
 
 class BotIncomesService
@@ -44,5 +45,13 @@ class BotIncomesService
 
         $messageModel->setAttribute('step', $step + 1);
         $incomesModel->save();
+    }
+
+    /**
+     * @return Collection
+     */
+    public function getAll(): Collection
+    {
+        return $this->incomesRepository->findAll();
     }
 }

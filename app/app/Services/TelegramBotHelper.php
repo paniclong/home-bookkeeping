@@ -9,8 +9,10 @@ use TelegramBot\Api\Types\Message;
 
 class TelegramBotHelper
 {
-    protected const SEND_EXPENSES_COMMAND = 'send_expenses';
-    protected const SEND_INCOMES_COMMAND = 'send_incomes';
+    public const SEND_EXPENSES_COMMAND = 'send_expenses';
+    public const SEND_INCOMES_COMMAND = 'send_incomes';
+    public const RECEIVE_EXPENSES_COMMAND = 'receive_expenses';
+    public const RECEIVE_INCOMES_COMMAND = 'receive_incomes';
 
     protected const BOT_COMMANDS = [
         self::SEND_EXPENSES_COMMAND,
@@ -24,10 +26,6 @@ class TelegramBotHelper
      */
     public static function getCommand(Message $message): string
     {
-        if (is_null($message) || $message->getText() === '') {
-            return '';
-        }
-
         preg_match(Client::REGEXP, $message->getText(), $matches);
 
         if (empty($matches) || !in_array($matches[1], self::BOT_COMMANDS, true)) {
@@ -44,10 +42,6 @@ class TelegramBotHelper
      */
     public static function isCommand(Message $message): bool
     {
-        if (is_null($message) || $message->getText() === '') {
-            return false;
-        }
-
         preg_match(Client::REGEXP, $message->getText(), $matches);
 
         return !empty($matches);

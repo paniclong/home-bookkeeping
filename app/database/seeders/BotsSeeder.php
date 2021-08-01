@@ -64,7 +64,7 @@ class BotsSeeder extends Seeder
 
             $botsModel
                 ->setCommand($botData['command'])
-                ->setStep($botData['step_id'])
+                ->setStepId($botData['step_id'])
                 ->setBotStep($botData['bot_step'])
                 ->setUserStep($botData['user_step']);
 

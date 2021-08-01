@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Collection\BotCollection;
 use App\Models\BotsModel;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -14,9 +15,9 @@ class BotsRepository extends AbstractRepository
     /**
      * @param string $command
      *
-     * @return Collection
+     * @return Collection|BotCollection
      */
-    public function findByCommand(string $command): Collection
+    public function findByCommand(string $command): BotCollection
     {
         return $this->findBy(['command' => $command]);
     }

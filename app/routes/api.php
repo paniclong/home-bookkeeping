@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\BotController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -19,4 +19,5 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::post('/webhook/telegram-bot', [Controller::class, 'webhook']);
+Route::post('/webhook/telegram-bot', BotController::class);
+Route::get('/webhook/telegram-bot', BotController::class);
