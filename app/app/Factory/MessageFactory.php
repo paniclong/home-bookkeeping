@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Factory;
 
-use App\Models\MessagesModel;
+use App\Models\MessageModel;
 
 class MessageFactory
 {
@@ -14,11 +14,11 @@ class MessageFactory
      * @param int $step
      * @param string $command
      *
-     * @return MessagesModel
+     * @return MessageModel
      */
-    public static function create(int $chatId, int $messageId, int $step, string $command): MessagesModel
+    public static function create(int $chatId, int $messageId, int $step, string $command): MessageModel
     {
-        $messageModel = new MessagesModel();
+        $messageModel = new MessageModel();
 
         $messageModel
             ->setChatId($chatId)

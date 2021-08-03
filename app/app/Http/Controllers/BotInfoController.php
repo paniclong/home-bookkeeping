@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 namespace App\Http\Controllers;
+use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Validation\ValidatesRequests;
-use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 use TelegramBot\Api\BotApi;
 use TelegramBot\Api\Exception;
@@ -29,24 +29,21 @@ class BotInfoController extends Controller
     }
 
     /**
-     * @return Response
+     * @return View
      *
      * @throws Exception
      * @throws InvalidArgumentException
      */
-    public function __invoke(): Response
+    public function __invoke(): View
     {
-        $webhookInfo = $this->botApi->getWebhookInfo()->toJson(true);
-        $botInfo = $this->botApi->getMe()->toJson(true);
-
-        $errorWebhookInfo = $this->errorBotApi->getWebhookInfo()->toJson(true);
-        $errorBotInfo = $this->errorBotApi->getMe()->toJson(true);
-
-        $data = [
-            'bot' => compact('webhookInfo', 'botInfo'),
-            'error-bot' => compact('errorWebhookInfo', 'errorBotInfo')
-        ];
-
-        return new Response($data);
+        return view(
+            'bot-info',
+            [
+                'webhookInfo' => $this->botApi->getWebhookInfo()->toJson(true),
+                'botInfo' => $this->botApi->getMe()->toJson(true),
+                'errorWebhookInfo' => $this->errorBotApi->getWebhookInfo()->toJson(true),
+                'errorBotInfo' => $this->errorBotApi->getMe()->toJson(true),
+            ]
+        );
     }
 }

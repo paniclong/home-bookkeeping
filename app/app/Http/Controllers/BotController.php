@@ -5,15 +5,16 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Factory\MessageFactory;
-use App\Models\BotsModel;
+use App\Helper\CurrencyHelper;
+use App\Helper\PriceHelper;
 use App\Models\ExpensesModel;
 use App\Models\IncomesModel;
-use App\Models\MessagesModel;
-use App\Repository\BotsRepository;
-use App\Repository\MessagesRepository;
-use App\Services\BotExpensesService;
-use App\Services\BotIncomesService;
-use App\Services\TelegramBotHelper;
+use App\Repository\BotRepository;
+use App\Repository\ExpensesRepository;
+use App\Repository\IncomesRepository;
+use App\Repository\MessageRepository;
+use App\Services\BotStepService;
+use App\Helper\TelegramBotHelper;
 use Closure;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Http\JsonResponse;
@@ -29,38 +30,42 @@ class BotController extends Controller
     use ValidatesRequests;
 
     protected LoggerInterface $logger;
-    protected MessagesRepository $messagesRepository;
-    protected BotsRepository $botsRepository;
-    protected BotExpensesService $botExpensesService;
-    protected BotIncomesService $botIncomesService;
+    protected MessageRepository $messageRepository;
+    protected BotRepository $botRepository;
+    protected BotStepService $botStepService;
     protected Client $botClient;
     protected Client $errorBotClient;
+    protected ExpensesRepository $expensesRepository;
+    protected IncomesRepository $incomesRepository;
 
     /**
      * @param Client $botClient
      * @param Client $errorBotClient
      * @param LoggerInterface $logger
-     * @param MessagesRepository $messagesRepository
-     * @param BotsRepository $botsRepository
-     * @param BotExpensesService $botExpensesService
-     * @param BotIncomesService $botIncomesService
+     * @param MessageRepository $messageRepository
+     * @param BotRepository $botRepository
+     * @param BotStepService $botStepService
+     * @param ExpensesRepository $expensesRepository
+     * @param IncomesRepository $incomesRepository
      */
     public function __construct(
-        Client $botClient,
-        Client $errorBotClient,
-        LoggerInterface $logger,
-        MessagesRepository $messagesRepository,
-        BotsRepository $botsRepository,
-        BotExpensesService $botExpensesService,
-        BotIncomesService $botIncomesService
+        Client             $botClient,
+        Client             $errorBotClient,
+        LoggerInterface    $logger,
+        MessageRepository  $messageRepository,
+        BotRepository      $botRepository,
+        BotStepService     $botStepService,
+        ExpensesRepository $expensesRepository,
+        IncomesRepository  $incomesRepository
     ) {
         $this->logger = $logger;
-        $this->messagesRepository = $messagesRepository;
-        $this->botsRepository = $botsRepository;
-        $this->botExpensesService = $botExpensesService;
-        $this->botIncomesService = $botIncomesService;
+        $this->messageRepository = $messageRepository;
+        $this->botRepository = $botRepository;
+        $this->botStepService = $botStepService;
         $this->botClient = $botClient;
         $this->errorBotClient = $errorBotClient;
+        $this->expensesRepository = $expensesRepository;
+        $this->incomesRepository = $incomesRepository;
     }
 
     /**
@@ -69,7 +74,7 @@ class BotController extends Controller
     public function __invoke(): JsonResponse
     {
         try {
-            $this->logger->info('Get webhook from telegram');
+            $this->logger->info('Get webhook from telegram', ['raw_body' => $this->botClient->getRawBody()]);
 
             $checker = static function () {
                 return true;
@@ -110,33 +115,32 @@ class BotController extends Controller
 
             if ($message === null) {
                 $this->logger->info('Message is empty, skipping');
+
                 return true;
             }
 
             if (!$command = TelegramBotHelper::getCommand($message)) {
                 $this->logger->info('Message is not command, skipping');
+
                 return true;
             }
 
             $chatId = $message->getChat()->getId();
-            $messageModel = $this->messagesRepository->findOneByChatId($chatId);
+            $messageModel = $this->messageRepository->findOneByChatId($chatId);
 
             if ($messageModel === null) {
-                $botCollection = $this->botsRepository->findByCommand($command);
-
-                /** @var BotsModel $firstBotStep */
-                $firstBotStep = $botCollection->first();
+                $botModel = $this->botRepository->findByCommand($command)->getFirst();
 
                 $messageModel = MessageFactory::create(
                     $chatId,
                     $message->getMessageId(),
-                    $firstBotStep->getStepId(),
+                    $botModel->getStepId(),
                     $command
                 );
 
                 $messageModel->save();
 
-                $this->botClient->sendMessage($chatId, $firstBotStep->getBotStep());
+                $this->botClient->sendMessage($chatId, $botModel->getBotStep());
 
                 $this->logger->info(sprintf('Success handle command - %s', $message->getText()));
 
@@ -165,8 +169,7 @@ class BotController extends Controller
                 return true;
             }
 
-            /** @var MessagesModel $messageModel */
-            $messageModel = $this->messagesRepository->findOneByChatId($chatId);
+            $messageModel = $this->messageRepository->findOneByChatId($chatId);
 
             if ($messageModel === null) {
                 $this->botClient->sendMessage($chatId, 'Неизвестная команда');
@@ -175,21 +178,30 @@ class BotController extends Controller
                 return true;
             }
 
+            $botCollection = $this->botRepository->findByCommand($messageModel->getCommand());
+
             switch ($messageModel->getCommand()) {
-                case TelegramBotHelper::SEND_EXPENSES_COMMAND: $this->botExpensesService->handle($message, $messageModel);
+                case TelegramBotHelper::SEND_EXPENSES_COMMAND:
+                    $model = $this->expensesRepository->findOneByChatId($chatId) ?: new ExpensesModel();
                     break;
-                case TelegramBotHelper::SEND_INCOMES_COMMAND: $this->botIncomesService->handle($message, $messageModel);
+                case TelegramBotHelper::SEND_INCOMES_COMMAND:
+                    $model = $this->incomesRepository->findOneByChatId($chatId) ?: new IncomesModel();
                     break;
+                default:
+                    throw new \Exception('Unknown command');
             }
 
-            $botCollection = $this->botsRepository->findByCommand($messageModel->getCommand());
-            $botStepModel = $botCollection->findByStepId($messageModel->getStep());
+            $messageObject = $this->botStepService->handle($model, $message, $messageModel, $botCollection);
 
-            $this->botClient->sendMessage($chatId, $botStepModel->getBotStep());
-
-            $lastModel = $botCollection->last();
-
-            $messageModel->isLastStep($lastModel->getStepId()) ? $messageModel->delete() : $messageModel->save();
+            $this->botClient->sendMessage(
+                $chatId,
+                $messageObject->getText(),
+                $messageObject->getParseMode(),
+                $messageObject->isDisablePreview(),
+                $messageObject->getReplyToMessageId(),
+                $messageObject->getReplyMarkup(),
+                $messageObject->isDisableNotification()
+            );
 
             $this->logger->info(sprintf('Success handle text message - %s', $message->getText()));
 
@@ -203,26 +215,32 @@ class BotController extends Controller
     protected function getReceiveExpensesCommandCallback(): Closure
     {
         return function (Message $message) {
-            $expensesCollection = $this->botExpensesService->getAll();
+            $expensesCollection = $this->expensesRepository->findAll();
 
-            $string = '';
+            $textMessage = '';
+            $allSum = 0;
 
-            $expensesCollection->map(function (ExpensesModel $model) use (&$string) {
-                $string .= 'Покупка № ' . $model->getQueueableId() . PHP_EOL
-                    . 'цена - ' . $model->getAttribute('amount') . PHP_EOL
-                    . 'количество - ' . $model->getAttribute('count') . PHP_EOL
-                    . 'описание - ' . $model->getAttribute('description')
-                    . PHP_EOL . PHP_EOL;
+            $expensesCollection->map(function (ExpensesModel $model) use (&$textMessage, &$allSum) {
+                $currency = $model->getCurrency() ?: CurrencyHelper::RUB_CURRENCY;
+                $price = $model->getAmount();
+
+                switch ($currency) {
+                    case CurrencyHelper::USD_CURRENCY: $price *= 72.43; break;
+                    case CurrencyHelper::ALL_CURRENCY: $price *= 86.43; break;
+                }
+
+                $allSum += $price;
+
+                $textMessage .= 'Покупка № ' . $model->getQueueableId() . PHP_EOL
+                    . 'цена - ' . $price . PHP_EOL
+                    . 'количество - ' . $model->getCount() . PHP_EOL
+                    . 'описание - ' . $model->getDescription() . PHP_EOL
+                    . 'дата - ' . $model->getCreatedAt() . PHP_EOL . PHP_EOL;
             });
 
-            $string .= PHP_EOL . PHP_EOL
-                . 'Общие траты за весь период - ' . PHP_EOL
-                . (number_format((float) $expensesCollection->sum('amount'), 0, '', ' '))
-                . ' руб';
+            $textMessage .= 'Общие траты за весь период: ' . PHP_EOL . PriceHelper::formatSumToString($allSum) . ' руб';
 
-            $this->logger->info($string);
-
-            $this->botClient->sendMessage($message->getChat()->getId(), $string);
+            $this->botClient->sendMessage($message->getChat()->getId(), $textMessage);
 
             return false;
         };
@@ -234,25 +252,51 @@ class BotController extends Controller
     protected function getReceiveIncomesCommandCallback(): Closure
     {
         return function (Message $message) {
-            $incomesCollection = $this->botIncomesService->getAll();
+            $incomesCollection = $this->incomesRepository->findAll();
+            $expensesCollection = $this->expensesRepository->findAll();
 
-            $string = '';
+            $textMessage = '';
+            $allIncomesSum = $allExpensesSum = 0;
 
-            $incomesCollection->map(function (IncomesModel $model) use (&$string) {
-                $string .= 'Прибыль № ' . $model->getQueueableId()
-                    . ', сумма - ' . $model->getAttribute('amount')
-                    . ', описание - ' . $model->getAttribute('description')
-                    . PHP_EOL;
+            $incomesCollection->map(function (IncomesModel $model) use (&$textMessage, &$allIncomesSum) {
+                $currency = $model->getCurrency() ?: CurrencyHelper::RUB_CURRENCY;
+                $sum = $model->getAmount();
+
+                switch ($currency) {
+                    case CurrencyHelper::USD_CURRENCY: $sum *= 72.43; break;
+                    case CurrencyHelper::ALL_CURRENCY: $sum *= 86.43; break;
+                }
+
+                $allIncomesSum += $sum;
+
+                $textMessage .= 'Доход № ' . $model->getQueueableId() . PHP_EOL
+                    . 'сумма - ' . $sum . PHP_EOL
+                    . 'описание - ' . $model->getDescription() . PHP_EOL
+                    . 'дата - ' . $model->getCreatedAt() . PHP_EOL . PHP_EOL;
             });
 
-            $string .= PHP_EOL . PHP_EOL
-                . 'Общая сумма прибыли за весь период - ' . PHP_EOL
-                . (number_format((float) $incomesCollection->sum('amount'), 0, '', ' '))
-                . ' руб';
+            $expensesCollection->map(function (ExpensesModel $model) use (&$allExpensesSum) {
+                $currency = $model->getCurrency() ?: CurrencyHelper::RUB_CURRENCY;
+                $sum = $model->getAmount();
 
-            $this->logger->info($string);
+                switch ($currency) {
+                    case CurrencyHelper::USD_CURRENCY: $sum *= 72.43; break;
+                    case CurrencyHelper::ALL_CURRENCY: $sum *= 86.43; break;
+                }
 
-            $this->botClient->sendMessage($message->getChat()->getId(), $string);
+                $allExpensesSum += $sum;
+            });
+
+            $incomesTotalAmount = PriceHelper::formatSumToString($allIncomesSum);
+            $balanceAmount = PriceHelper::formatSumToString($allIncomesSum - $allExpensesSum);
+
+            $textMessage .= 'Общая сумма дохода за весь период: ' . PHP_EOL
+                . $incomesTotalAmount
+                . ' руб' . PHP_EOL . PHP_EOL;
+
+            $textMessage .= 'Остаток: ' . $balanceAmount . ' руб';
+
+            $this->botClient->sendMessage($message->getChat()->getId(), $textMessage);
 
             return false;
         };

@@ -6,14 +6,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class MessagesModel extends Model
+class MessageModel extends Model
 {
     protected $table = 'messages';
 
     /**
      * @param int $chatId
      *
-     * @return MessagesModel
+     * @return MessageModel
      */
     public function setChatId(int $chatId): self
     {
@@ -25,7 +25,7 @@ class MessagesModel extends Model
     /**
      * @param int $messageId
      *
-     * @return MessagesModel
+     * @return MessageModel
      */
     public function setMessageId(int $messageId): self
     {
@@ -37,7 +37,7 @@ class MessagesModel extends Model
     /**
      * @param int $step
      *
-     * @return MessagesModel
+     * @return MessageModel
      */
     public function setStep(int $step): self
     {
@@ -49,7 +49,7 @@ class MessagesModel extends Model
     /**
      * @param string $command
      *
-     * @return MessagesModel
+     * @return MessageModel
      */
     public function setCommand(string $command): self
     {

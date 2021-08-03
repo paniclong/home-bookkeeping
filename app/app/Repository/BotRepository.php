@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Collection\BotCollection;
-use App\Models\BotsModel;
+use App\Models\BotModel;
 use Illuminate\Database\Eloquent\Collection;
 
-class BotsRepository extends AbstractRepository
+class BotRepository extends AbstractRepository
 {
-    protected string $modelName = BotsModel::class;
+    protected string $modelName = BotModel::class;
 
     /**
      * @param string $command

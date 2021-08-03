@@ -7,16 +7,16 @@ namespace App\Models;
 use App\Collection\BotCollection;
 use Illuminate\Database\Eloquent\Model;
 
-class BotsModel extends Model
+class BotModel extends Model
 {
     protected $table = 'bots';
 
     /**
      * @param string $command
      *
-     * @return BotsModel
+     * @return BotModel
      */
-    public function setCommand(string $command): BotsModel
+    public function setCommand(string $command): BotModel
     {
         $this->setAttribute('command', $command);
 
@@ -26,9 +26,9 @@ class BotsModel extends Model
     /**
      * @param int $stepId
      *
-     * @return BotsModel
+     * @return BotModel
      */
-    public function setStepId(int $stepId): BotsModel
+    public function setStepId(int $stepId): BotModel
     {
         $this->setAttribute('step_id', $stepId);
 
@@ -46,9 +46,9 @@ class BotsModel extends Model
     /**
      * @param string $botStep
      *
-     * @return BotsModel
+     * @return BotModel
      */
-    public function setBotStep(string $botStep): BotsModel
+    public function setBotStep(string $botStep): BotModel
     {
         $this->setAttribute('bot_step', $botStep);
 
@@ -56,11 +56,19 @@ class BotsModel extends Model
     }
 
     /**
+     * @return string
+     */
+    public function getUserStep(): string
+    {
+        return (string) $this->getAttributeValue('user_step');
+    }
+
+    /**
      * @param string $userStep
      *
-     * @return BotsModel
+     * @return BotModel
      */
-    public function setUserStep(string $userStep): BotsModel
+    public function setUserStep(string $userStep): BotModel
     {
         $this->setAttribute('user_step', $userStep);
 
@@ -73,6 +81,26 @@ class BotsModel extends Model
     public function getStepId(): int
     {
         return (int) $this->getAttributeValue('step_id');
+    }
+
+    /**
+     * @return int|null
+     */
+    public function getNextStepId(): ?int
+    {
+        return $this->getAttributeValue('next_step_id');
+    }
+
+    /**
+     * @param int|null $nextStepId
+     *
+     * @return BotModel
+     */
+    public function setNextStepId(?int $nextStepId): BotModel
+    {
+        $this->setAttribute('next_step_id', $nextStepId);
+
+        return $this;
     }
 
     /**

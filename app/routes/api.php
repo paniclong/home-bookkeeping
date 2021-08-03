@@ -20,4 +20,5 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 
 Route::post('/webhook/telegram-bot', BotController::class);
+/** @todo for test - delete after release */
 Route::get('/webhook/telegram-bot', BotController::class);

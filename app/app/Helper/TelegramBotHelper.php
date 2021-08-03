@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services;
+namespace App\Helper;
 
 use TelegramBot\Api\Client;
 use TelegramBot\Api\Types\Message;
@@ -14,7 +14,7 @@ class TelegramBotHelper
     public const RECEIVE_EXPENSES_COMMAND = 'receive_expenses';
     public const RECEIVE_INCOMES_COMMAND = 'receive_incomes';
 
-    protected const BOT_COMMANDS = [
+    public const BOT_COMMANDS = [
         self::SEND_EXPENSES_COMMAND,
         self::SEND_INCOMES_COMMAND,
     ];

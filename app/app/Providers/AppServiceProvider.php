@@ -6,10 +6,11 @@ namespace App\Providers;
 
 use App\Http\Controllers\BotController;
 use App\Http\Controllers\BotInfoController;
-use App\Repository\BotsRepository;
-use App\Repository\MessagesRepository;
-use App\Services\BotExpensesService;
-use App\Services\BotIncomesService;
+use App\Repository\BotRepository;
+use App\Repository\ExpensesRepository;
+use App\Repository\IncomesRepository;
+use App\Repository\MessageRepository;
+use App\Services\BotStepService;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\ServiceProvider;
 use Psr\Log\LoggerInterface;
@@ -33,10 +34,11 @@ class AppServiceProvider extends ServiceProvider
                 $client,
                 $errorClient,
                 $app->make(LoggerInterface::class),
-                $app->make(MessagesRepository::class),
-                $app->make(BotsRepository::class),
-                $app->make(BotExpensesService::class),
-                $app->make(BotIncomesService::class)
+                $app->make(MessageRepository::class),
+                $app->make(BotRepository::class),
+                $app->make(BotStepService::class),
+                $app->make(ExpensesRepository::class),
+                $app->make(IncomesRepository::class)
             );
         });
 
