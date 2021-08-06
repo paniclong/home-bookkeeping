@@ -17,6 +17,8 @@ class TelegramBotHelper
     public const BOT_COMMANDS = [
         self::SEND_EXPENSES_COMMAND,
         self::SEND_INCOMES_COMMAND,
+        self::RECEIVE_EXPENSES_COMMAND,
+        self::RECEIVE_INCOMES_COMMAND,
     ];
 
     /**

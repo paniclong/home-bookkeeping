@@ -74,6 +74,34 @@ class BotsSeeder extends Seeder
             'bot_step' => 'Данные сохранены!',
             'user_step' => '',
         ],
+        [
+            'command' => 'receive_expenses',
+            'step_id' => 1,
+            'next_step_id' => 2,
+            'bot_step' => 'Выберите период:',
+            'user_step' => 'set_period',
+        ],
+        [
+            'command' => 'receive_expenses',
+            'step_id' => 2,
+            'next_step_id' => null,
+            'bot_step' => '',
+            'user_step' => '',
+        ],
+        [
+            'command' => 'receive_incomes',
+            'step_id' => 1,
+            'next_step_id' => 2,
+            'bot_step' => 'Выберите период:',
+            'user_step' => 'set_period',
+        ],
+        [
+            'command' => 'receive_expenses',
+            'step_id' => 2,
+            'next_step_id' => null,
+            'bot_step' => '',
+            'user_step' => '',
+        ],
     ];
 
     public function run(): void

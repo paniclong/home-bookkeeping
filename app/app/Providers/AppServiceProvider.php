@@ -6,11 +6,9 @@ namespace App\Providers;
 
 use App\Http\Controllers\BotController;
 use App\Http\Controllers\BotInfoController;
-use App\Repository\BotRepository;
-use App\Repository\ExpensesRepository;
-use App\Repository\IncomesRepository;
-use App\Repository\MessageRepository;
-use App\Services\BotStepService;
+use App\Services\Command\ReceiveTextCommand;
+use App\Services\Command\FirstCommand;
+use App\Services\CommandProvider;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\ServiceProvider;
 use Psr\Log\LoggerInterface;
@@ -26,6 +24,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(CommandProvider::class, static function (Container $app) {
+            $commandProvider = new CommandProvider();
+
+            $commandProvider->addCommand($app->make(FirstCommand::class));
+            $commandProvider->addCommand($app->make(ReceiveTextCommand::class));
+
+            return $commandProvider;
+        });
+
         $this->app->bind(BotController::class, static function (Container $app) {
             $client = $app->make(Client::class, ['token' => config('telegram.bot_id')]);
             $errorClient = $app->make(Client::class, ['token' => config('telegram.error_bot_id')]);
@@ -34,11 +41,7 @@ class AppServiceProvider extends ServiceProvider
                 $client,
                 $errorClient,
                 $app->make(LoggerInterface::class),
-                $app->make(MessageRepository::class),
-                $app->make(BotRepository::class),
-                $app->make(BotStepService::class),
-                $app->make(ExpensesRepository::class),
-                $app->make(IncomesRepository::class)
+                $app->get(CommandProvider::class)
             );
         });
 

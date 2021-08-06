@@ -13,11 +13,12 @@ use TelegramBot\Api\Types\ReplyKeyboardMarkup;
 class MessageTransformer
 {
     /**
+     * @param string $text
      * @param BotModel $botNextStepModel
      *
      * @return Message
      */
-    public function transform(BotModel $botNextStepModel): Message
+    public function transform(string $text, BotModel $botNextStepModel): Message
     {
         switch ($botNextStepModel->getUserStep()) {
             case 'set_currency':
@@ -39,16 +40,37 @@ class MessageTransformer
                     true
                 );
                 break;
+            case 'receive_expenses':
+            case 'receive_incomes':
+                $replyKeyboardMarkup = new ReplyKeyboardMarkup(
+                    [
+                        [
+                            [
+                                'text' => '1 день',
+                            ],
+                            [
+                                'text' => '1 неделя',
+                            ],
+                            [
+                                'text' => '1 месяц',
+                            ],
+                            [
+                                'text' => '1 год',
+                            ],
+                            [
+                                'text' => 'За всё время',
+                            ],
+                        ],
+                    ],
+                    null,
+                    true
+                );
+                break;
             default:
                 $replyKeyboardMarkup = new ReplyKeyboardHide();
+
         }
 
-        return new Message(
-            $botNextStepModel->getBotStep(),
-            null,
-            false,
-            null,
-            $replyKeyboardMarkup
-        );
+        return new Message($text, null, false, null, $replyKeyboardMarkup);
     }
 }
